@@ -9,7 +9,11 @@ let debug = require('debug')('weatherstation:server');
 let http = require('http');
 let mongodb = require('../mongo');
 
+/**
+ * Connect to MongoDB
+ */
 mongodb.connect();
+
 /**
  * Get port from environment and store in Express.
  */
