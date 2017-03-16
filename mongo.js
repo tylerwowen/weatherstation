@@ -4,6 +4,17 @@
 let MongoClient = require('mongodb').MongoClient;
 let assert = require('assert');
 
+/**
+ * @return {number}
+ */
+function FToC(temp) {
+    return (temp - 32 ) * 5 / 9;
+}
+
+function getMidnight(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDay());
+}
+
 class MongoDB {
 
     constructor () {
@@ -18,26 +29,83 @@ class MongoDB {
             assert.equal(null, err);
             console.log("Connected successfully to server");
             this._connection = db;
-            this._temperature = db.collection('temperature');
-            // this._humidity = db.collection('humidity');
+            this._tempHum = db.collection('temperature');
         });
     }
 
-    saveTemperature (temp, unit = 'c') {
-        this._temperature.insertOne({
-            "temperature": temp,
-            "unit": unit,
-            "timestamp": new Date()
-        });
+    saveTempHum (temp, hum, unit = 'c', timestamp = new Date().toISOString()) {
+        let date = new Date(timestamp);
+        let hour = date.getHours();
+        let minute = date.getMinutes();
+        let hourKey = 'values_hour.' + hour.toString();
+        let minuteKey =  hourKey + '.' + minute.toString();
+
+        if (unit != 'c') {
+            temp = FToC(temp);
+            unit = 'c'
+        }
+
+        return this._tempHum.updateOne(
+            {
+                timestamp_day: getMidnight(date)
+            },
+            {
+                $setOnInsert: {
+                    unit: unit,
+                    "hours": [{
+                        timestamp_hour: hour,
+                        "minutes": [{
+                            timestamp_minute: minute
+                        }]
+                    }],
+
+                },
+                $max: {
+                    highTemp: temp,
+                    highHum: hum
+                },
+                $min: {
+                    lowTemp: temp,
+                    lowHum: hum
+                },
+                $inc: {
+                    totalTemp: temp,
+                    totalHum: hum,
+                    tempCount: 1,
+                    humCount: 1//,
+                    // [hourKey+'.totalTemp']: temp,
+                    // [hourKey+'.totalHum']: hum,
+                    // [hourKey+'.tempCount']: 1,
+                    // [hourKey+'.humCount']: 1
+                }//,
+                $push:{
+                    "hours.$.minutes":{
+                        temperature: temp,
+                        humidity: hum
+                    }
+                }
+            },
+            {
+                upsert: true
+            });
     }
 
-    getTemepratureBetween (start = new Date('October 13, 2014 11:13:00'), end = new Date()) {
-        return this._temperature.find({
-            "timestamp": {
-                $gte: start,
-                $lt: end
-            }
-        }).toArray();
+    getTempHumBetween (
+        start = new Date('January 1, 2017 00:00:00'),
+        end = new Date(),
+        granularity) {
+
+        return this._tempHum.aggregate([
+            {
+                $match: {
+                    timestamp_day: {
+                        $gte: getMidnight(start),
+                        $lte: getMidnight(end)
+                    }
+                }
+            },
+            {$unwind: "$values"}
+        ]).toArray();
     }
 }
 

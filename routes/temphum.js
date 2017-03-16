@@ -1,0 +1,49 @@
+/**
+ * Created by tylero on 3/9/17.
+ */
+let express = require('express');
+let router = express.Router();
+let mongoDB = require('../mongo');
+
+/* GET temperatures in a rage of dates. */
+router.get('/start/:start/end/:end/granularity/:granularity', function(req, res, next) {
+
+    let start = new Date(parseInt(req.params.start));
+    let end = new Date(parseInt(req.params.end));
+    let granularity = req.params.granularity;
+
+    if (granularity != 'min' && granularity != 'hour' && granularity != 'day') {
+        res.status(400).end();
+        return;
+    }
+
+    mongoDB.getTempHumBetween(start, end, granularity)
+        .then((temperatures) => {
+            res.json({'temperature': temperatures});
+        }, (err) => {
+            console.error(err);
+            res.status(500).send('Failed to fetch temperatures.')
+        });
+
+});
+
+router.post('/add', function (req, res, next) {
+
+    let body = req.body;
+    if (body.temperature === undefined
+        || body.humidity === undefined) {
+
+        res.status(400).send('The request body is not acceptable!');
+    }
+    else {
+        mongoDB.saveTempHum(body.temperature, body.humidity, body.unit, body.timestamp)
+            .then(() => {
+                res.status(200).end();
+            }, (err) => {
+                console.error(err);
+                res.status(400).send();
+            });
+    }
+});
+
+module.exports = router;
