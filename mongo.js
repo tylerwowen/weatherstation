@@ -37,8 +37,7 @@ class MongoDB {
         let date = new Date(timestamp);
         let hour = date.getHours();
         let minute = date.getMinutes();
-        let hourKey = 'values_hour.' + hour.toString();
-        let minuteKey =  hourKey + '.' + minute.toString();
+        let hourKey = 'hours.' + hour.toString();
 
         if (unit != 'c') {
             temp = FToC(temp);
@@ -52,13 +51,6 @@ class MongoDB {
             {
                 $setOnInsert: {
                     unit: unit,
-                    "hours": [{
-                        timestamp_hour: hour,
-                        "minutes": [{
-                            timestamp_minute: minute
-                        }]
-                    }],
-
                 },
                 $max: {
                     highTemp: temp,
@@ -72,14 +64,14 @@ class MongoDB {
                     totalTemp: temp,
                     totalHum: hum,
                     tempCount: 1,
-                    humCount: 1//,
-                    // [hourKey+'.totalTemp']: temp,
-                    // [hourKey+'.totalHum']: hum,
-                    // [hourKey+'.tempCount']: 1,
-                    // [hourKey+'.humCount']: 1
-                }//,
+                    humCount: 1,
+                    [hourKey+'.totalTemp']: temp,
+                    [hourKey+'.totalHum']: hum,
+                    [hourKey+'.tempCount']: 1,
+                    [hourKey+'.humCount']: 1
+                },
                 $push:{
-                    "hours.$.minutes":{
+                    [hourKey+'.minutes']:{
                         temperature: temp,
                         humidity: hum
                     }
