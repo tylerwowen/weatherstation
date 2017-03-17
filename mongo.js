@@ -72,6 +72,7 @@ class MongoDB {
                 },
                 $push:{
                     [hourKey+'.minutes']:{
+                        time_mintue: minute,
                         temperature: temp,
                         humidity: hum
                     }
@@ -87,6 +88,20 @@ class MongoDB {
         end = new Date(),
         granularity) {
 
+        switch (granularity) {
+            case 'min':
+                return this.getTempHumBetweenByMin(start, end);
+                break;
+            case 'hour':
+                return this.getTempHumBetweenByHour(start, end);
+                break;
+            case 'day':
+                return this.getTempHumBetweenByDay(start, end);
+                break;
+        }
+    }
+
+    getTempHumBetweenByMin(start, end) {
         return this._tempHum.aggregate([
             {
                 $match: {
@@ -96,8 +111,47 @@ class MongoDB {
                     }
                 }
             },
-            {$unwind: "$values"}
-        ]).toArray();
+            {$project: {timestamp_day: 1, hours: 1, _id: 0}}
+        ]).toArray()
+            .then((dbResults) => {
+                let finalResults = [];
+                dbResults.forEach((day) => {
+                    let hour = 0;
+                    if (day.timestamp_day == getMidnight(start)) {
+                        hour = start.getHours();
+                    }
+                    for (; hour < 24; hour++) {
+                        let minute = 0;
+                        if (day.timestamp_day == getMidnight(start)
+                            && hour == start.getHours()) {
+
+                            minute = start.getMinutes();
+                        }
+                        if (day.hours[hour.toString()] == undefined) continue;
+
+                        let minutes = day.hours[hour.toString()].minutes;
+                        minutes.forEach((data) => {
+                            if (data.time_mintue >= minute) {
+                                finalResults.push(data);
+                            }
+                        });
+                    }
+
+                });
+                return finalResults;
+            });
+    }
+
+    getTempHumBetweenByHour(start, end) {
+        return promise.then((dbResults) => {
+
+        });
+    }
+
+    getTempHumBetweenByDay(start, end) {
+        return promise.then((dbResults) => {
+
+        });
     }
 }
 
