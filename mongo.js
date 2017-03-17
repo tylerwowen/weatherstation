@@ -12,7 +12,7 @@ function FToC(temp) {
 }
 
 function getMidnight(date) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDay());
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 class MongoDB {
@@ -116,27 +116,23 @@ class MongoDB {
             .then((dbResults) => {
                 let finalResults = [];
                 dbResults.forEach((day) => {
-                    let hour = 0;
-                    if (day.timestamp_day == getMidnight(start)) {
-                        hour = start.getHours();
-                    }
-                    for (; hour < 24; hour++) {
-                        let minute = 0;
-                        if (day.timestamp_day == getMidnight(start)
-                            && hour == start.getHours()) {
-
-                            minute = start.getMinutes();
+                    for (let hour in day.hours) {
+                        if (day.hours.hasOwnProperty(hour)) {
+                            let minutes = day.hours[hour].minutes;
+                            minutes.forEach((minute) => {
+                                let ts = new Date(day.timestamp_day);
+                                ts.setHours(parseInt(hour));
+                                ts.setMinutes(parseInt(minute.time_mintue));
+                                let data = {
+                                    temperature: minute.temperature,
+                                    humidity: minute.humidity,
+                                    timestamp: ts
+                                };
+                                if (data.timestamp >= start && data.timestamp <= end)
+                                    finalResults.push(data);
+                            });
                         }
-                        if (day.hours[hour.toString()] == undefined) continue;
-
-                        let minutes = day.hours[hour.toString()].minutes;
-                        minutes.forEach((data) => {
-                            if (data.time_mintue >= minute) {
-                                finalResults.push(data);
-                            }
-                        });
                     }
-
                 });
                 return finalResults;
             });

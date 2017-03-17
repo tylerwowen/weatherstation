@@ -17,9 +17,14 @@ router.get('/start/:start/end/:end/granularity/:granularity', function(req, res,
         return;
     }
 
+    if (start >= end) {
+        res.status(400).send("Start cannot be later than end!");
+        return;
+    }
+
     mongoDB.getTempHumBetween(start, end, granularity)
         .then((temperatures) => {
-            res.json({'temperature': temperatures});
+            res.json({'results': temperatures});
         }, (err) => {
             console.error(err);
             res.status(500).send('Failed to fetch temperatures.')
