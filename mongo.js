@@ -27,9 +27,9 @@ class MongoDB {
         // Use connect method to connect to the server
         MongoClient.connect(this._url, (err, db) => {
             assert.equal(null, err);
-            console.log("Connected successfully to server");
+            console.log('Connected successfully to server');
             this._connection = db;
-            this._tempHum = db.collection('temperature');
+            this._tempHum = db.collection('temphum');
         });
     }
 
@@ -37,21 +37,31 @@ class MongoDB {
         let date = new Date(timestamp);
         let hour = date.getHours();
         let minute = date.getMinutes();
-        let hourKey = 'hours.' + hour.toString();
+        let hourKey = `hours.${hour}`;
+        let minuteKey = `minutes.${hour}.${minute}`;
 
         if (unit != 'c') {
             temp = FToC(temp);
-            unit = 'c'
         }
 
+        return this.updateTempHum(date, temp, hum, hourKey, minuteKey)
+            .then((results) => {
+                if (results.modifiedCount === 0) {
+                    return this.preAllocate(date)
+                        .then( () => {
+                            this.updateTempHum(date, temp, hum, hourKey, minuteKey);
+                        });
+                }
+                return results;
+            });
+    }
+
+    updateTempHum(date, temp, hum, hourKey, minuteKey) {
         return this._tempHum.updateOne(
             {
-                timestamp_day: getMidnight(date)
+                date: getMidnight(date)
             },
             {
-                $setOnInsert: {
-                    unit: unit,
-                },
                 $max: {
                     highTemp: temp,
                     highHum: hum
@@ -65,22 +75,63 @@ class MongoDB {
                     totalHum: hum,
                     tempCount: 1,
                     humCount: 1,
-                    [hourKey+'.totalTemp']: temp,
-                    [hourKey+'.totalHum']: hum,
-                    [hourKey+'.tempCount']: 1,
-                    [hourKey+'.humCount']: 1
+                    [`${hourKey}.totalTemp`]: temp,
+                    [`${hourKey}.totalHum`]: hum,
+                    [`${hourKey}.tempCount`]: 1,
+                    [`${hourKey}.humCount`]: 1
                 },
-                $push:{
-                    [hourKey+'.minutes']:{
-                        time_mintue: minute,
+                $set: {
+                    [minuteKey]: {
                         temperature: temp,
                         humidity: hum
                     }
                 }
             },
+                {upsert: false}
+            );
+    }
+
+    preAllocate(date) {
+        let hours = {};
+        let minutes = {};
+
+        for ( let i = 0; i < 24; i++) {
+            hours[i] = {
+                totalTemp: 0,
+                totalHum: 0,
+                tempCount: 0,
+                humCount: 0
+            };
+            minutes[i] = {};
+            for (let j = 0; j < 60; j++) {
+                minutes[i][j] = {
+                    temperature: 0,
+                    humidity: 0
+                };
+            }
+        }
+
+        return this._tempHum.updateOne(
             {
-                upsert: true
-            });
+                date: getMidnight(date),
+            },
+            {
+                $set: {
+                    highTemp: -100,
+                    highHum: -100,
+                    lowTemp: 100,
+                    lowHum: 100,
+                    totalTemp: 0,
+                    totalHum: 0,
+                    tempCount: 0,
+                    humCount: 0,
+                    unit: 'c',
+                    hours: hours,
+                    minutes: minutes
+                }
+            },
+            {upsert: true}
+        );
     }
 
     getTempHumBetween (
@@ -139,9 +190,39 @@ class MongoDB {
     }
 
     getTempHumBetweenByHour(start, end) {
-        return promise.then((dbResults) => {
-
-        });
+        return this._tempHum.aggregate([
+            {
+                $match: {
+                    timestamp_day: {
+                        $gte: getMidnight(start),
+                        $lte: getMidnight(end)
+                    }
+                }
+            },
+            {$project: {timestamp_day: 1, hours: 1, _id: 0}}
+        ]).toArray()
+            .then((dbResults) => {
+                let finalResults = [];
+                dbResults.forEach((day) => {
+                    for (let hour in day.hours) {
+                        if (day.hours.hasOwnProperty(hour)) {
+                            day.hours[hour].minutes.forEach((minute) => {
+                                let ts = new Date(day.timestamp_day);
+                                ts.setHours(parseInt(hour));
+                                ts.setMinutes(parseInt(minute.time_mintue));
+                                let data = {
+                                    temperature: minute.temperature,
+                                    humidity: minute.humidity,
+                                    timestamp: ts
+                                };
+                                if (data.timestamp >= start && data.timestamp <= end)
+                                    finalResults.push(data);
+                            });
+                        }
+                    }
+                });
+                return finalResults;
+            });
     }
 
     getTempHumBetweenByDay(start, end) {
