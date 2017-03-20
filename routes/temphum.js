@@ -22,6 +22,11 @@ router.get('/start/:start/end/:end/granularity/:granularity', function(req, res,
         return;
     }
 
+    if (granularity == 'min' && end.getTime() - start.getTime() > 6*3600*1000) {
+        res.status(400).send("You can't get minutes data longer than 6 hours!");
+        return;
+    }
+
     mongoDB.getTempHumBetween(start, end, granularity)
         .then((temperatures) => {
             res.json({'results': temperatures});

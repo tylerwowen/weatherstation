@@ -11,8 +11,12 @@ function FToC(temp) {
     return (temp - 32 ) * 5 / 9;
 }
 
-function getMidnight(date) {
+function roundToDay(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function roundToHour(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
 }
 
 class MongoDB {
@@ -59,7 +63,7 @@ class MongoDB {
     updateTempHum(date, temp, hum, hourKey, minuteKey) {
         return this._tempHum.updateOne(
             {
-                date: getMidnight(date)
+                date: roundToDay(date)
             },
             {
                 $max: {
@@ -82,13 +86,13 @@ class MongoDB {
                 },
                 $set: {
                     [minuteKey]: {
-                        temperature: temp,
-                        humidity: hum
+                        temp: temp,
+                        hum: hum
                     }
                 }
             },
-                {upsert: false}
-            );
+            {upsert: false}
+        );
     }
 
     preAllocate(date) {
@@ -105,15 +109,15 @@ class MongoDB {
             minutes[i] = {};
             for (let j = 0; j < 60; j++) {
                 minutes[i][j] = {
-                    temperature: 0,
-                    humidity: 0
+                    temp: null,
+                    hum: null
                 };
             }
         }
 
         return this._tempHum.updateOne(
             {
-                date: getMidnight(date),
+                date: roundToDay(date),
             },
             {
                 $set: {
@@ -153,75 +157,80 @@ class MongoDB {
     }
 
     getTempHumBetweenByMin(start, end) {
-        return this._tempHum.aggregate([
+        return this._tempHum.find(
             {
-                $match: {
-                    timestamp_day: {
-                        $gte: getMidnight(start),
-                        $lte: getMidnight(end)
-                    }
+                date: {
+                    $gte: roundToDay(start),
+                    $lte: roundToDay(end)
                 }
             },
-            {$project: {timestamp_day: 1, hours: 1, _id: 0}}
-        ]).toArray()
+            {
+                date: 1,
+                minutes: 1
+            }
+        ).toArray()
             .then((dbResults) => {
                 let finalResults = [];
-                dbResults.forEach((day) => {
-                    for (let hour in day.hours) {
-                        if (day.hours.hasOwnProperty(hour)) {
-                            let minutes = day.hours[hour].minutes;
-                            minutes.forEach((minute) => {
-                                let ts = new Date(day.timestamp_day);
-                                ts.setHours(parseInt(hour));
-                                ts.setMinutes(parseInt(minute.time_mintue));
-                                let data = {
-                                    temperature: minute.temperature,
-                                    humidity: minute.humidity,
-                                    timestamp: ts
-                                };
-                                if (data.timestamp >= start && data.timestamp <= end)
-                                    finalResults.push(data);
-                            });
+                for (let day of dbResults) {
+                    for (let hourKey in day.minutes) {
+                        if (day.minutes.hasOwnProperty(hourKey)) {
+                            let ts_hour = new Date(day.date);
+                            ts_hour.setHours(parseInt(hourKey));
+                            if (ts_hour < roundToHour(start) || ts_hour > roundToDay(end) + 1)
+                                continue;
+                            for (let minuteKey in day.minutes[hourKey]) {
+                                if (day.minutes[hourKey].hasOwnProperty(minuteKey)) {
+                                    let ts = new Date(ts_hour);
+                                    ts.setMinutes(parseInt(minuteKey));
+                                    let data = {
+                                        temperature: day.minutes[hourKey][minuteKey].temp,
+                                        humidity: day.minutes[hourKey][minuteKey].hum,
+                                        timestamp: ts
+                                    };
+                                    if (ts >= start && ts <= end && data.temperature != null)
+                                        finalResults.push(data);
+                                }
+                            }
                         }
                     }
-                });
+                }
                 return finalResults;
             });
     }
 
     getTempHumBetweenByHour(start, end) {
-        return this._tempHum.aggregate([
+        return this._tempHum.find(
             {
-                $match: {
-                    timestamp_day: {
-                        $gte: getMidnight(start),
-                        $lte: getMidnight(end)
-                    }
+                date: {
+                    $gte: roundToDay(start),
+                    $lte: roundToDay(end)
                 }
             },
-            {$project: {timestamp_day: 1, hours: 1, _id: 0}}
-        ]).toArray()
+            {
+                date: 1,
+                hours: 1
+            })
+            .toArray()
             .then((dbResults) => {
                 let finalResults = [];
-                dbResults.forEach((day) => {
-                    for (let hour in day.hours) {
-                        if (day.hours.hasOwnProperty(hour)) {
-                            day.hours[hour].minutes.forEach((minute) => {
-                                let ts = new Date(day.timestamp_day);
-                                ts.setHours(parseInt(hour));
-                                ts.setMinutes(parseInt(minute.time_mintue));
-                                let data = {
-                                    temperature: minute.temperature,
-                                    humidity: minute.humidity,
-                                    timestamp: ts
-                                };
-                                if (data.timestamp >= start && data.timestamp <= end)
-                                    finalResults.push(data);
-                            });
+                for (let day of dbResults) {
+                    for (let hourKey in day.hours) {
+                        if (day.hours.hasOwnProperty(hourKey)) {
+                            let ts = new Date(day.date);
+                            ts.setHours(parseInt(hourKey));
+                            let data = {
+                                avgTemp: day.hours[hourKey].totalTemp / day.hours[hourKey].tempCount,
+                                avgHum: day.hours[hourKey].totalHum / day.hours[hourKey].humCount,
+                                timestamp: ts
+                            };
+                            if (ts >= start && ts <= end && day.hours[hourKey].tempCount != 0)
+                                finalResults.push(data);
                         }
                     }
+                }
+                return finalResults.sort((a, b) => {
+                    return a.timestamp < b.timestamp ? -1 : 1;
                 });
-                return finalResults;
             });
     }
 
