@@ -235,9 +235,36 @@ class MongoDB {
     }
 
     getTempHumBetweenByDay(start, end) {
-        return promise.then((dbResults) => {
-
-        });
+        return this._tempHum.find(
+            {
+                date: {
+                    $gte: roundToDay(start),
+                    $lte: roundToDay(end)
+                }
+            },
+            {
+                date: 1,
+                totalTemp: 1,
+                totalHum: 1,
+                tempCount: 1,
+                humCount: 1,
+            })
+            .toArray()
+            .then((dbResults) => {
+                let finalResults = [];
+                for (let day of dbResults) {
+                    let data = {
+                        avgTemp: day.totalTemp / day.tempCount,
+                        avgHum: day.totalHum / day.humCount,
+                        timestamp: day.date
+                    };
+                    if (day.tempCount != 0)
+                        finalResults.push(data);
+                }
+                return finalResults.sort((a, b) => {
+                    return a.timestamp < b.timestamp ? -1 : 1;
+                });
+            });
     }
 }
 
