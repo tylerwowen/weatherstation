@@ -21,15 +21,22 @@ function roundToHour(date) {
 
 class MongoDB {
 
+    /**
+     * @constructor
+     */
     constructor () {
         this._url = 'mongodb://pi:pi123@ds127190.mlab.com:27190/weather';
     }
 
     get connection () {return this._connection;}
 
+    /**
+     * Connects to DB
+     * @returns {Promise}
+     */
     connect () {
         // Use connect method to connect to the server
-        MongoClient.connect(this._url, (err, db) => {
+        return MongoClient.connect(this._url, (err, db) => {
             assert.equal(null, err);
             console.log('Connected successfully to server');
             this._connection = db;
@@ -37,7 +44,15 @@ class MongoDB {
         });
     }
 
-    saveTempHum (temp, hum, unit = 'c', timestamp = new Date().toISOString()) {
+    /**
+     *
+     * @param{number} temp
+     * @param{number} hum
+     * @param{string} unit
+     * @param{Date} timestamp
+     * @returns {Promise.<CommandResult>}
+     */
+    saveTempHum (temp, hum, unit = 'c', timestamp = new Date()) {
         let date = new Date(timestamp);
         let hour = date.getHours();
         let minute = date.getMinutes();
@@ -95,6 +110,11 @@ class MongoDB {
         );
     }
 
+    /**
+     *  Allocate a document in DB for the given date.
+     * @param{Date} date
+     * @returns {Promise}
+     */
     preAllocate(date) {
         let hours = {};
         let minutes = {};
@@ -138,6 +158,13 @@ class MongoDB {
         );
     }
 
+    /**
+     *
+     * @param{Date} start
+     * @param{Date} end
+     * @param{string} granularity
+     * @returns {*}
+     */
     getTempHumBetween (
         start = new Date('January 1, 2017 00:00:00'),
         end = new Date(),
@@ -156,6 +183,12 @@ class MongoDB {
         }
     }
 
+    /**
+     *
+     * @param{Date} start
+     * @param{Date} end
+     * @returns {Promise.<Array.<Object>>}
+     */
     getTempHumBetweenByMin(start, end) {
         return this._tempHum.find(
             {

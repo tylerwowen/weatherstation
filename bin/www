@@ -12,7 +12,9 @@ let mongodb = require('../mongo');
 /**
  * Connect to MongoDB
  */
-mongodb.connect();
+mongodb.connect().fail(() => {
+    console.error("Failed to connect to DB.");
+});
 
 /**
  * Get port from environment and store in Express.
