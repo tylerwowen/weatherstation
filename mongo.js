@@ -36,8 +36,7 @@ class MongoDB {
      */
     connect () {
         // Use connect method to connect to the server
-        return MongoClient.connect(this._url, (err, db) => {
-            assert.equal(null, err);
+        return MongoClient.connect(this._url).then((db) => {
             console.log('Connected successfully to server');
             this._connection = db;
             this._tempHum = db.collection('temphum');

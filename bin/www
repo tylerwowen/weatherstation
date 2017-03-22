@@ -12,8 +12,8 @@ let mongodb = require('../mongo');
 /**
  * Connect to MongoDB
  */
-mongodb.connect().fail(() => {
-    console.error("Failed to connect to DB.");
+mongodb.connect().catch((err) => {
+    console.error("Failed to connect to DB, reason: \n" + err);
 });
 
 /**

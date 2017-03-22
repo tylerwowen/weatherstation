@@ -35,7 +35,6 @@ router.get('/start/:start/end/:end/granularity/:granularity', function(req, res,
             console.error(err);
             res.status(500).send('Failed to fetch temperatures.')
         });
-
 });
 
 router.post('/add', function (req, res, next) {
