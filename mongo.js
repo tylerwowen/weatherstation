@@ -12,11 +12,11 @@ function FToC(temp) {
 }
 
 function roundToDay(date) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
 function roundToHour(date) {
-    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours());
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours()));
 }
 
 class MongoDB {
@@ -53,8 +53,8 @@ class MongoDB {
      */
     saveTempHum (temp, hum, unit = 'c', timestamp = new Date()) {
         let date = new Date(timestamp);
-        let hour = date.getHours();
-        let minute = date.getMinutes();
+        let hour = date.getUTCHours();
+        let minute = date.getUTCMinutes();
         let hourKey = `hours.${hour}`;
         let minuteKey = `minutes.${hour}.${minute}`;
 
@@ -207,13 +207,13 @@ class MongoDB {
                     for (let hourKey in day.minutes) {
                         if (day.minutes.hasOwnProperty(hourKey)) {
                             let ts_hour = new Date(day.date);
-                            ts_hour.setHours(parseInt(hourKey));
+                            ts_hour.setUTCHours(parseInt(hourKey));
                             if (ts_hour < roundToHour(start) || ts_hour > roundToDay(end) + 1)
                                 continue;
                             for (let minuteKey in day.minutes[hourKey]) {
                                 if (day.minutes[hourKey].hasOwnProperty(minuteKey)) {
                                     let ts = new Date(ts_hour);
-                                    ts.setMinutes(parseInt(minuteKey));
+                                    ts.setUTCMinutes(parseInt(minuteKey));
                                     let data = {
                                         temperature: day.minutes[hourKey][minuteKey].temp,
                                         humidity: day.minutes[hourKey][minuteKey].hum,
@@ -249,7 +249,7 @@ class MongoDB {
                     for (let hourKey in day.hours) {
                         if (day.hours.hasOwnProperty(hourKey)) {
                             let ts = new Date(day.date);
-                            ts.setHours(parseInt(hourKey));
+                            ts.setUTCHours(parseInt(hourKey));
                             let data = {
                                 avgTemp: day.hours[hourKey].totalTemp / day.hours[hourKey].tempCount,
                                 avgHum: day.hours[hourKey].totalHum / day.hours[hourKey].humCount,
