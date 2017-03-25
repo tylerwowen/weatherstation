@@ -58,7 +58,7 @@ class MongoDB {
         let hourKey = `hours.${hour}`;
         let minuteKey = `minutes.${hour}.${minute}`;
 
-        if (unit != 'c') {
+        if (unit !== 'c') {
             temp = FToC(temp);
         }
 

@@ -3,35 +3,34 @@
  */
 "use strict";
 
-let xmlHttp = new XMLHttpRequest();
+var xmlHttp = new XMLHttpRequest();
 
 xmlHttp.onreadystatechange = responseHandler;
 xmlHttp.open("GET", buildRequest(), true);
 xmlHttp.send();
 
-
 function responseHandler() {
   "use strict";
 
   if (xmlHttp.readyState === 4) {
-    let res = JSON.parse(xmlHttp.responseText);
-    let data = [formTemp(res.results), formHum(res.results)];
+    var res = JSON.parse(xmlHttp.responseText);
+    var data = [formTemp(res.results), formHum(res.results)];
     Plotly.newPlot('myDiv', data);
   }
 }
 
 function buildRequest() {
 
-  let start = new Date();
-  start.setHours(start.getHours()-6);
-  let end = new Date();
-  return `/temphum/start/${start.getTime()}/end/${end.getTime()}/granularity/min`;
+  var start = new Date();
+  start.setHours(start.getHours() - 6);
+  var end = new Date();
+  return "/temphum/start/" + start.getTime() + "/end/" + end.getTime() + "/granularity/min";
 }
 
 function formTemp(data) {
-  let time = [];
-  let temp = [];
-  for (let i = 0; i < data.length; i++) {
+  var time = [];
+  var temp = [];
+  for (var i = 0; i < data.length; i++) {
     time.push(new Date(data[i].timestamp));
     temp.push(data[i].temperature);
   }
@@ -43,9 +42,9 @@ function formTemp(data) {
 }
 
 function formHum(data) {
-  let time = [];
-  let hum = [];
-  for (let i = 0; i < data.length; i++) {
+  var time = [];
+  var hum = [];
+  for (var i = 0; i < data.length; i++) {
     time.push(new Date(data[i].timestamp));
     hum.push(data[i].humidity);
   }
@@ -55,3 +54,4 @@ function formHum(data) {
     type: 'scatter'
   };
 }
+//# sourceMappingURL=plot.js.map
