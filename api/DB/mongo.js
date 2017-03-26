@@ -2,7 +2,6 @@
  * Created by tylero on 3/9/17.
  */
 let MongoClient = require('mongodb').MongoClient;
-let assert = require('assert');
 
 /**
  * @return {number}

@@ -3,7 +3,7 @@
  */
 let express = require('express');
 let router = express.Router();
-let mongoDB = require('../mongo');
+let dataBase = require('../DB/mongo');
 
 /* GET temperatures in a rage of dates. */
 router.get('/start/:start/end/:end/granularity/:granularity', function(req, res, next) {
@@ -28,7 +28,7 @@ router.get('/start/:start/end/:end/granularity/:granularity', function(req, res,
     return;
   }
 
-  mongoDB.getTempHumBetween(start, end, granularity)
+  dataBase.getTempHumBetween(start, end, granularity)
     .then((temperatures) => {
       res.json({'results': temperatures});
     }, (err) => {
@@ -46,7 +46,7 @@ router.post('/add', function (req, res, next) {
     res.status(400).send('The request body is not acceptable!');
   }
   else {
-    mongoDB.saveTempHum(body.temperature, body.humidity, body.unit, body.timestamp)
+    dataBase.saveTempHum(body.temperature, body.humidity, body.unit, body.timestamp)
       .then(() => {
         res.status(200).end();
       }, (err) => {

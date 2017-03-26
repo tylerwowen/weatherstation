@@ -5,9 +5,9 @@ let logger = require('morgan');
 let cookieParser = require('cookie-parser');
 let bodyParser = require('body-parser');
 
-let index = require('./routes/index');
-let users = require('./routes/users');
-let temphum = require('./routes/temphum');
+let index = require('./api/routes/index');
+let users = require('./api/routes/users');
+let temphum = require('./api/routes/temphum');
 
 let app = express();
 
@@ -21,7 +21,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'dist/public')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.use('/', index);
 app.use('/users', users);
