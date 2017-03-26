@@ -31,7 +31,8 @@ router.get('/start/:start/end/:end/granularity/:granularity', function(req, res,
   dataBase.getTempHumBetween(start, end, granularity)
     .then((temperatures) => {
       res.json({'results': temperatures});
-    }, (err) => {
+    })
+    .catch((err) => {
       console.error(err);
       res.status(500).send('Failed to fetch temperatures.')
     });
@@ -49,7 +50,8 @@ router.post('/add', function (req, res, next) {
     dataBase.saveTempHum(body.temperature, body.humidity, body.unit, body.timestamp)
       .then(() => {
         res.status(200).end();
-      }, (err) => {
+      })
+      .catch((err) => {
         console.error(err);
         res.status(400).send();
       });
