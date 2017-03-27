@@ -3,8 +3,15 @@
  */
 import React from 'react';
 import ReactDOM from 'react-dom';
+import injectTapEventPlugin from 'react-tap-event-plugin';
+
+import App from './components/App';
+
+// Needed for onTouchTap
+// http://stackoverflow.com/a/34015469/988941
+injectTapEventPlugin();
 
 ReactDOM.render(
-  React.createElement('h2', null, 'Hello react'),
+  <App/>,
   document.getElementById('root')
-)
+);
