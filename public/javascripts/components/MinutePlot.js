@@ -1,14 +1,26 @@
 /**
- * Created by tylero on 3/23/17.
+ * Created by tylero on 3/27/17.
  */
-"use strict";
 
-let xmlHttp = new XMLHttpRequest();
+// let xmlHttp = new XMLHttpRequest();
 
-xmlHttp.onreadystatechange = responseHandler;
-xmlHttp.open("GET", buildRequest(), true);
-xmlHttp.send();
-
+// xmlHttp.onreadystatechange = responseHandler;
+// xmlHttp.open("GET", buildRequest(), true);
+// xmlHttp.send();
+const fetchData = () => {
+  fetch(buildRequest())
+    .then((res) => {
+      if (res.status === 200) {
+        return res.json();
+      }
+    })
+    .then((rawData) => {
+      let data = [formTemp(rawData.results), formHum(rawData.results)];
+      console.log(data);
+      Plotly.newPlot('6HourPlot', data);
+    })
+    .catch(console.error);
+}
 
 function responseHandler() {
   "use strict";
@@ -55,3 +67,5 @@ function formHum(data) {
     type: 'scatter'
   };
 }
+
+export default fetchData;
