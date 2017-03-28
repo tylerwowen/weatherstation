@@ -3,7 +3,10 @@
  */
 import React from 'react';
 import {Tabs, Tab} from 'material-ui/Tabs';
-import fetchData from './MinutePlot';
+
+import fetchMinutelyFor6HoursData from './MinutePlot';
+import fetchHourlyFor24HoursData from './HourPlot';
+import fetchDailyFor7DaysData from './DayPlot';
 
 const styles = {
   headline: {
@@ -14,8 +17,15 @@ const styles = {
   },
 };
 
+function handleDayActive() {
+
+}
+
 const PlotTabs = () => {
-  fetchData();
+  fetchMinutelyFor6HoursData();
+  fetchHourlyFor24HoursData();
+  fetchDailyFor7DaysData();
+
   return (
     <Tabs>
       <Tab label="6 Hours" >
@@ -31,17 +41,21 @@ const PlotTabs = () => {
           <p>
             This is another example tab.
           </p>
+          <div id="24HourPlot">
+          </div>
         </div>
       </Tab>
       <Tab
         label="7 Days"
-        data-route="/home"
+        onActive={handleDayActive}
       >
         <div>
           <h2 style={styles.headline}>Daily data collected in past 7 dyas</h2>
           <p>
             This is a third example tab.
           </p>
+          <div id="7DayPlot">
+          </div>
         </div>
       </Tab>
       <Tab label="Customized">

@@ -2,8 +2,8 @@
  * Created by tylero on 3/27/17.
  */
 
-const fetchMinutelyFor6HoursData = () => {
-  fetch(buildMinutelyFor6HoursRequest())
+const fetchHourlyFor24HoursData = () => {
+  fetch(buildHourlyFor24HoursRequest())
     .then((res) => {
       if (res.status === 200) {
         return res.json();
@@ -11,27 +11,27 @@ const fetchMinutelyFor6HoursData = () => {
       throw new Error(`Status${res.status}`);
     })
     .then((rawData) => {
-      let data = [formTemp(rawData.results), formHum(rawData.results)];
+      let data = [formAvgTemp(rawData.results), formAvgHum(rawData.results)];
       console.log(data);
-      Plotly.newPlot('6HourPlot', data);
+      Plotly.newPlot('24HourPlot', data);
     })
     .catch(console.error);
 }
 
-function buildMinutelyFor6HoursRequest() {
+function buildHourlyFor24HoursRequest() {
 
   let start = new Date();
-  start.setHours(start.getHours()-6);
+  start.setHours(start.getHours()-24);
   let end = new Date();
-  return `/temphum/start/${start.getTime()}/end/${end.getTime()}/granularity/min`;
+  return `/temphum/start/${start.getTime()}/end/${end.getTime()}/granularity/hour`;
 }
 
-function formTemp(data) {
-  return formData('temperature', data);
+function formAvgTemp(data) {
+  return formData('avgTemp', data);
 }
 
-function formHum(data) {
-  return formData('humidity', data);
+function formAvgHum(data) {
+  return formData('avgHum', data);
 }
 
 function formData(key, data) {
@@ -49,4 +49,4 @@ function formData(key, data) {
   };
 }
 
-export default fetchMinutelyFor6HoursData;
+export default fetchHourlyFor24HoursData;

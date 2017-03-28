@@ -4,7 +4,7 @@
 let path = require('path');
 
 module.exports = {
-  entry: './public/javascripts/index.js',
+  entry: ['whatwg-fetch', './public/javascripts/index.js'],
   output: {
     path: path.resolve(__dirname, './dist/javascripts'),
     filename: 'bundle.js'
